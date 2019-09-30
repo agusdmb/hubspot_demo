@@ -12,6 +12,10 @@ class Token:
     token: JSONData
     _cache: Dict[str, Any] = {}
 
+    _BASE_URL = "https://api.hubapi.com/oauth/v1"
+    _TOKEN_URL = _BASE_URL + "/token"
+    _INFO_TOKEN_URL = _BASE_URL + "/AccessToken/{access_token}"
+
     def __init__(self, token):
         self.token = token
 
@@ -24,7 +28,7 @@ class Token:
             "redirect_uri": base_url,
             "code": code,
         }
-        response = requests.post(app.config["TOKEN_URL"], data=data)
+        response = requests.post(Token._TOKEN_URL, data=data)
         # TODO: check post success
         response.raise_for_status()
 
@@ -33,7 +37,7 @@ class Token:
 
     def get_token_info(self) -> JSONData:
         if "info" not in self._cache:
-            url = f"https://api.hubapi.com/oauth/v1/access-tokens/{self.token['access_token']}"
+            url = self._INFO_TOKEN_URL.format(access_token=self.token["access_token"])
             response = requests.get(url)
             # TODO: check post success
             response.raise_for_status()
@@ -41,14 +45,13 @@ class Token:
         return self._cache["info"]
 
     def refresh_token(self) -> None:
-        url = f"https://api.hubapi.com/oauth/v1/token"
         data = {
             "grant_type": "refresh_token",
             "client_id": app.config["CLIENT_ID"],
             "client_secret": app.config["CLIENT_SECRET"],
             "refresh_token": self.token["refresh_token"],
         }
-        response = requests.post(url, data=data)
+        response = requests.post(self._TOKEN_URL, data=data)
         # TODO: check post success
         response.raise_for_status()
         self.token = response.json()
