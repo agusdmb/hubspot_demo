@@ -2,7 +2,6 @@ from typing import Any, Dict
 
 import requests
 from flask import Blueprint
-from flask import current_app as app
 from flask import request
 from flask_restplus import Api, Resource
 
@@ -31,14 +30,10 @@ def list_contacts(access_token: str) -> JSONData:
 class AuthCallback(Resource):
     def get(self):
         # TODO: check if not code is sent
-        print(request.args)
         code = request.args["code"]
 
-        token = Token.from_code(code)
+        token = Token.from_code(code, request.base_url)
 
-        print(token.token)
-        print(token.get_token_info())
-        token.refresh_token()
-        print(token.token)
+        token.save()
 
         return {"msg": "ok"}

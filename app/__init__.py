@@ -12,6 +12,7 @@ def create_app() -> Flask:
     for url, blueprint in ACTIVE:
         app.register_blueprint(blueprint, url_prefix=url)
 
+    db.init_app(app)
     Migrate(app, db)
 
     return app
