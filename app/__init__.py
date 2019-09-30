@@ -1,6 +1,8 @@
 from flask import Flask
 
 from app.blueprints import ACTIVE
+from app.models import db
+from flask_migrate import Migrate
 
 
 def create_app() -> Flask:
@@ -9,5 +11,7 @@ def create_app() -> Flask:
 
     for url, blueprint in ACTIVE:
         app.register_blueprint(blueprint, url_prefix=url)
+
+    Migrate(app, db)
 
     return app

@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict
 
 import requests
 from flask import Blueprint
@@ -6,25 +6,12 @@ from flask import current_app as app
 from flask import request
 from flask_restplus import Api, Resource
 
+from app.token import Token
+
 oauth = Blueprint("oauth", __name__)
 api = Api(oauth)
 
-JSONData = Dict[str, str]
-
-
-def get_token(code: str) -> JSONData:
-    data = {
-        "grant_type": "authorization_code",
-        "client_id": app.config["CLIENT_ID"],
-        "client_secret": app.config["CLIENT_SECRET"],
-        "redirect_uri": request.base_url,
-        "code": code,
-    }
-    response = requests.post(app.config["TOKEN_URL"], data=data)
-    # TODO: check post success
-    response.raise_for_status()
-
-    return response.json()
+JSONData = Dict[str, Any]
 
 
 def list_contacts(access_token: str) -> JSONData:
@@ -40,13 +27,6 @@ def list_contacts(access_token: str) -> JSONData:
     return response.json()
 
 
-def get_token_info(token: str) -> JSONData:
-    url = f"https://api.hubapi.com/oauth/v1/access-tokens/{token}"
-    response = requests.get(url)
-    response.raise_for_status()
-    return response.json()
-
-
 @api.route("/auth_callback")
 class AuthCallback(Resource):
     def get(self):
@@ -54,9 +34,11 @@ class AuthCallback(Resource):
         print(request.args)
         code = request.args["code"]
 
-        token = get_token(code)
+        token = Token.from_code(code)
 
-        print(list_contacts(token["access_token"]))
-        print(get_token_info(token["access_token"]))
+        print(token.token)
+        print(token.get_token_info())
+        token.refresh_token()
+        print(token.token)
 
         return {"msg": "ok"}
