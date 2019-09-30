@@ -40,6 +40,13 @@ def list_contacts(access_token: str) -> JSONData:
     return response.json()
 
 
+def get_token_info(token: str) -> JSONData:
+    url = f"https://api.hubapi.com/oauth/v1/access-tokens/{token}"
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.json()
+
+
 @api.route("/auth_callback")
 class AuthCallback(Resource):
     def get(self):
@@ -48,6 +55,8 @@ class AuthCallback(Resource):
         code = request.args["code"]
 
         token = get_token(code)
+
         print(list_contacts(token["access_token"]))
+        print(get_token_info(token["access_token"]))
 
         return {"msg": "ok"}
