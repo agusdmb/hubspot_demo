@@ -14,7 +14,7 @@ class Token:
 
     _BASE_URL = "https://api.hubapi.com/oauth/v1"
     _TOKEN_URL = _BASE_URL + "/token"
-    _INFO_TOKEN_URL = _BASE_URL + "/AccessToken/{access_token}"
+    _INFO_TOKEN_URL = _BASE_URL + "/access-tokens/{access_token}"
 
     def __init__(self, token):
         self.token = token

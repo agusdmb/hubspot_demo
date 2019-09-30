@@ -13,9 +13,9 @@ api = Api(oauth)
 JSONData = Dict[str, Any]
 
 
-def list_contacts(access_token: str) -> JSONData:
+def list_contacts(token: Token) -> JSONData:
     headers = {
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {token.token['access_token']}",
         "Content-Type": "application/json",
     }
     response = requests.get(
