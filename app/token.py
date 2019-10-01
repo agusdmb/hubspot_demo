@@ -59,7 +59,7 @@ class Token:
             self._cache["info"] = response.json()
         return self._cache["info"]
 
-    def refresh_token(self) -> None:
+    def refresh_token(self) -> "Token":
         data = {
             "grant_type": "refresh_token",
             "client_id": app.config["CLIENT_ID"],
@@ -70,7 +70,8 @@ class Token:
         # TODO: check post success
         response.raise_for_status()
         self.data = response.json()
-        self.save()
+        token = self.save()
+        return token
 
     def save(self) -> "Token":
         access_token = AccessToken.query.get(self.data["refresh_token"])
