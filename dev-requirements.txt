@@ -5,3 +5,4 @@ mypy==0.730
 mypy-extensions==0.4.1
 isort==4.3.21
 flake8==3.7.8
+Flask-Migrate==2.5.2
