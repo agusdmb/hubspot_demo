@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import requests
 from flask import current_app as app
@@ -9,15 +9,15 @@ JSONData = Dict[str, Any]
 
 
 class Token:
-    token: JSONData
+    data: JSONData
     _cache: Dict[str, Any] = {}
 
     _BASE_URL = "https://api.hubapi.com/oauth/v1"
     _TOKEN_URL = _BASE_URL + "/token"
     _INFO_TOKEN_URL = _BASE_URL + "/access-tokens/{access_token}"
 
-    def __init__(self, token):
-        self.token = token
+    def __init__(self, data):
+        self.data = data
 
     @staticmethod
     def from_code(code: str, base_url: str) -> "Token":
@@ -32,12 +32,27 @@ class Token:
         # TODO: check post success
         response.raise_for_status()
 
-        token = Token(response.json())
+        token = Token(response.json()).save()
         return token
+
+    @staticmethod
+    def from_access_token(access_token: AccessToken) -> "Token":
+        data = {
+            "refresh_token": access_token.refresh_token,
+            "access_token": access_token.access_token,
+            "expires_in": access_token.expires_in,
+            "last_updated": str(access_token.last_updated)
+        }
+        token = Token(data)
+        return token
+
+    @staticmethod
+    def get_all() -> List["Token"]:
+        return [Token.from_access_token(access_token) for access_token in AccessToken.query.all()]
 
     def get_token_info(self) -> JSONData:
         if "info" not in self._cache:
-            url = self._INFO_TOKEN_URL.format(access_token=self.token["access_token"])
+            url = self._INFO_TOKEN_URL.format(access_token=self.data["access_token"])
             response = requests.get(url)
             # TODO: check post success
             response.raise_for_status()
@@ -49,18 +64,25 @@ class Token:
             "grant_type": "refresh_token",
             "client_id": app.config["CLIENT_ID"],
             "client_secret": app.config["CLIENT_SECRET"],
-            "refresh_token": self.token["refresh_token"],
+            "refresh_token": self.data["refresh_token"],
         }
         response = requests.post(self._TOKEN_URL, data=data)
         # TODO: check post success
         response.raise_for_status()
-        self.token = response.json()
+        self.data = response.json()
+        self.save()
 
-    def save(self) -> None:
-        access_token = AccessToken(
-            refresh_token=self.token["refresh_token"],
-            access_token=self.token["access_token"],
-            expires_in=self.token["expires_in"],
-        )
+    def save(self) -> "Token":
+        access_token = AccessToken.query.get(self.data["refresh_token"])
+        if access_token:
+            access_token.access_token = self.data["access_token"]
+            access_token.expires_in = self.data["expires_in"]
+        else:
+            access_token = AccessToken(
+                refresh_token=self.data["refresh_token"],
+                access_token=self.data["access_token"],
+                expires_in=self.data["expires_in"],
+            )
         db.session.add(access_token)
         db.session.commit()
+        return Token.from_access_token(access_token)
