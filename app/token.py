@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import requests
 from flask import current_app as app
@@ -41,14 +41,24 @@ class Token:
             "refresh_token": access_token.refresh_token,
             "access_token": access_token.access_token,
             "expires_in": access_token.expires_in,
-            "last_updated": str(access_token.last_updated)
+            "last_updated": str(access_token.last_updated),
         }
         token = Token(data)
         return token
 
     @staticmethod
+    def from_refresh_token(refresh_token: str) -> Optional["Token"]:
+        access_token = AccessToken.query.get(refresh_token)
+        if access_token:
+            return Token.from_access_token(access_token)
+        return None
+
+    @staticmethod
     def get_all() -> List["Token"]:
-        return [Token.from_access_token(access_token) for access_token in AccessToken.query.all()]
+        return [
+            Token.from_access_token(access_token)
+            for access_token in AccessToken.query.all()
+        ]
 
     def get_token_info(self) -> JSONData:
         if "info" not in self._cache:

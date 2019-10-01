@@ -1,12 +1,10 @@
 from typing import Any, Dict, List
 
 import requests
-from flask import Blueprint
-from flask import request
+from flask import Blueprint, request
 from flask_restplus import Api, Resource, abort
 
 from app.token import Token
-from app.models import AccessToken
 
 oauth = Blueprint("oauth", __name__)
 api = Api(oauth)
@@ -48,11 +46,10 @@ class TokenList(Resource):
 @api.route("/tokens/refresh_token/<string:refresh_token>")
 class TokenUpdate(Resource):
     def get(self, refresh_token) -> JSONData:
-        access_token = AccessToken.query.get(refresh_token)
+        token = Token.from_refresh_token(refresh_token)
 
-        if not access_token:
+        if token is None:
             abort(404, f"refresh_token: {refresh_token} not found")
 
-        token = Token.from_access_token(access_token)
         token = token.refresh_token()
         return token.data

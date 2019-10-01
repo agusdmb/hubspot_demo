@@ -1,11 +1,11 @@
 from typing import Any, Dict
 
 import requests
-from flask import Blueprint
-from flask import request
+from flask import Blueprint, abort, request
 from flask_restplus import Api, Resource
 
 from app.token import Token
+from app.deal import Deal
 
 deals = Blueprint("deals", __name__)
 api = Api(deals)
@@ -13,8 +13,15 @@ api = Api(deals)
 JSONData = Dict[str, Any]
 
 
-@api.route("/")
+@api.route("/<string:refresh_token>")
 class DealsList(Resource):
-    def get(self):
+    def get(self, refresh_token) -> JSONData:
+        # TODO: autorefresh token when expired
+        token = Token.from_refresh_token(refresh_token)
 
-        return {"msg": "ok"}
+        if token is None:
+            abort(404, f"refresh_token: {refresh_token} not found")
+
+        deal = Deal(token)
+
+        return deal.data

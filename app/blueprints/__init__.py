@@ -1,3 +1,3 @@
-from app.blueprints import oauth
+from app.blueprints import oauth, deals
 
-ACTIVE = [("/oauth", oauth.oauth)]
+ACTIVE = [("/oauth", oauth.oauth), ("/deals", deals.deals)]
