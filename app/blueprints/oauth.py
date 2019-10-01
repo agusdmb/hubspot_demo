@@ -1,11 +1,12 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import requests
 from flask import Blueprint
 from flask import request
-from flask_restplus import Api, Resource
+from flask_restplus import Api, Resource, abort
 
 from app.token import Token
+from app.models import AccessToken
 
 oauth = Blueprint("oauth", __name__)
 api = Api(oauth)
@@ -15,7 +16,7 @@ JSONData = Dict[str, Any]
 
 def list_contacts(token: Token) -> JSONData:
     headers = {
-        "Authorization": f"Bearer {token.token['access_token']}",
+        "Authorization": f"Bearer {token.data['access_token']}",
         "Content-Type": "application/json",
     }
     response = requests.get(
@@ -28,12 +29,30 @@ def list_contacts(token: Token) -> JSONData:
 
 @api.route("/auth_callback")
 class AuthCallback(Resource):
-    def get(self):
+    def get(self) -> JSONData:
         # TODO: check if not code is sent
         code = request.args["code"]
 
         token = Token.from_code(code, request.base_url)
 
-        token.save()
+        return token.data
 
-        return {"msg": "ok"}
+
+@api.route("/tokens")
+class TokenList(Resource):
+    def get(self) -> List[JSONData]:
+        tokens = Token.get_all()
+        return [token.data for token in tokens]
+
+
+@api.route("/tokens/refresh_token/<string:refresh_token>")
+class TokenUpdate(Resource):
+    def get(self, refresh_token) -> JSONData:
+        access_token = AccessToken.query.get(refresh_token)
+
+        if not access_token:
+            abort(404, f"refresh_token: {refresh_token} not found")
+
+        token = Token.from_access_token(access_token)
+        token = token.refresh_token()
+        return token.data
