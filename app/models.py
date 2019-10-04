@@ -1,21 +1,20 @@
-from datetime import datetime
-
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import relationship
 
 db = SQLAlchemy()
 
 
-class AccessToken(db.Model):  # type: ignore
-    __tablename__ = "access_token"
-    refresh_token = db.Column(db.String(300), primary_key=True)
-    access_token = db.Column(db.String(300))
-    expires_in = db.Column(db.Integer)
-    last_updated = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-
-
-class User(db.Model):  # type: ignore
+class UserModel(db.Model):  # type: ignore
     __tablename__ = "user"
     user_id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(128))
+    user = db.Column(db.String(128))
+    refresh_token = db.Column(db.String(300), unique=True)
+    access_token = db.Column(db.String(300))
+    deals = relationship("DealModel")
+
+
+class DealModel(db.Model):  # type: ignore
+    __tablename__ = "deal"
+    deal_id = db.Column(db.Integer, primary_key=True)
+    properties = db.Column(db.JSON)
+    user = db.Column(db.Integer, db.ForeignKey("user.user_id"))

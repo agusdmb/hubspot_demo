@@ -1,11 +1,11 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
-import requests
-from flask import Blueprint, abort, request
+from flask import Blueprint, abort
 from flask_restplus import Api, Resource
 
-from app.token import Token
-from app.deal import Deal
+# from app.user import User
+from app.deal import Deals
+from app.user import User
 
 deals = Blueprint("deals", __name__)
 api = Api(deals)
@@ -13,15 +13,23 @@ api = Api(deals)
 JSONData = Dict[str, Any]
 
 
-@api.route("/<string:refresh_token>")
+@api.route("deals/<string:user_id>")
 class DealsList(Resource):
-    def get(self, refresh_token) -> JSONData:
-        # TODO: autorefresh token when expired
-        token = Token.from_refresh_token(refresh_token)
+    def get(self, user_id: str) -> List[JSONData]:
+        user = User.get(user_id)
+        if user:
+            deals = Deals.load_from_user(user)
+            return [deal.json() for deal in deals.deals]
+        abort(404, "User not found")
 
-        if token is None:
-            abort(404, f"refresh_token: {refresh_token} not found")
 
-        deal = Deal(token)
-
-        return deal.data
+@api.route("deals/<string:user_id>/fetch")
+class DealsFetch(Resource):
+    def get(self, user_id: str) -> List[JSONData]:
+        user = User.get(user_id)
+        if user:
+            deals = Deals.fetch_from_user(user)
+            for deal in deals.deals:
+                deal.save()
+            return [deal.json() for deal in deals.deals]
+        abort(404, "User not found")
