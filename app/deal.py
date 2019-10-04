@@ -8,6 +8,10 @@ from app.user import User
 JSONData = Dict[str, Any]
 
 
+class DealException(Exception):
+    pass
+
+
 class Deal:
     user_id: int
     deal_id: int
@@ -23,10 +27,10 @@ class Deal:
 
     @classmethod
     def from_api(cls, deal_id: int, user: User) -> "Deal":
-        response = requests.get(
-            cls._BASE_URL.format(deal_id=deal_id), headers=user.header
-        )
-        response.raise_for_status()
+        response = user.requests(cls._BASE_URL.format(deal_id=deal_id))
+        if response.status_code != 200:
+            raise DealException("Couldn't get deal: {deal_id}.")
+
         properties = {
             key: value
             for key, value in response.json()["properties"].items()
@@ -75,7 +79,7 @@ class Deals:
     @classmethod
     def fetch_from_user(cls, user: User) -> "Deals":
         # TODO: paging limit default 100
-        response = requests.get(cls._BASE_URL, headers=user.header)
+        response = user.requests(cls._BASE_URL)
         response.raise_for_status()
         deals: List[Deal] = []
         for deal in response.json()["deals"]:

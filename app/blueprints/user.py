@@ -3,7 +3,7 @@ from typing import Any, Dict
 from flask import Blueprint
 from flask_restplus import Api, Resource, abort
 
-from app.user import User
+from app.user import User, UserException
 
 user = Blueprint("user", __name__)
 api = Api(user)
@@ -41,6 +41,9 @@ class UserRefresh(Resource):
         """
         user = User.get(user_id)
         if user:
-            user.refresh_token()
-            return user.data
+            try:
+                user.refresh_token()
+                return user.data
+            except UserException:
+                abort(500, "Couldn't refresh token")
         abort(404, "User not found")

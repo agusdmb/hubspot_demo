@@ -8,6 +8,10 @@ from app.models import UserModel, db
 JSONData = Dict[str, Any]
 
 
+class UserException(Exception):
+    pass
+
+
 class User:
     data: JSONData
     _cache: Dict[str, Any] = {}
@@ -36,8 +40,8 @@ class User:
             "code": code,
         }
         response = requests.post(cls._TOKEN_URL, data=data)
-        # TODO: check post success
-        response.raise_for_status()
+        if response.status_code != 200:
+            raise UserException(f"Couldn't get the access token for code {code}.")
 
         return response.json()
 
@@ -45,8 +49,10 @@ class User:
     def _get_user_info(cls, access_token: str) -> JSONData:
         url = cls._INFO_TOKEN_URL.format(access_token=access_token)
         response = requests.get(url)
-        # TODO: check post success
-        response.raise_for_status()
+        if response.status_code != 200:
+            raise UserException(
+                f"Couldn't get the info for access_token: {access_token}."
+            )
         return response.json()
 
     @staticmethod
@@ -72,6 +78,7 @@ class User:
         return None
 
     def refresh_token(self) -> None:
+        # TODO: check what error throws HubSpot if the token has expired.
         data = {
             "grant_type": "refresh_token",
             "client_id": app.config["CLIENT_ID"],
@@ -79,8 +86,8 @@ class User:
             "refresh_token": self.data["refresh_token"],
         }
         response = requests.post(self._TOKEN_URL, data=data)
-        # TODO: check post success
-        response.raise_for_status()
+        if response.status_code != 200:
+            raise UserException("Couldn't refresh token: {self.data['refresh_token']}")
         self.data.update(response.json())
         self.save()
 
@@ -100,6 +107,14 @@ class User:
 
     @property
     def header(self) -> Dict[str, str]:
-        return {
-            "Authorization": f"Bearer {self.data['access_token']}",
-        }
+        return {"Authorization": f"Bearer {self.data['access_token']}"}
+
+    def requests(self, url):
+        response = requests.get(url, headers=self.header)
+        if response.status_code == 401:
+            self.refresh_token()
+            response = requests.get(url, headers=self.header)
+
+        response.raise_for_status()
+
+        return response
