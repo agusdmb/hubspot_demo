@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from flask import current_app as app
+from requests.models import Response
 
 from app.models import UserModel, db
 
@@ -109,7 +110,7 @@ class User:
     def header(self) -> Dict[str, str]:
         return {"Authorization": f"Bearer {self.data['access_token']}"}
 
-    def requests(self, url):
+    def requests(self, url: str) -> Response:
         response = requests.get(url, headers=self.header)
         if response.status_code == 401:
             self.refresh_token()
