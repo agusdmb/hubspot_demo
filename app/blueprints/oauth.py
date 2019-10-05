@@ -1,9 +1,9 @@
 from typing import Any, Dict
 
 from flask import Blueprint, request
-from flask_restplus import Api, Resource
+from flask_restplus import Api, Resource, abort
 
-from app.user import User
+from app.user import User, UserException
 
 oauth = Blueprint("oauth", __name__)
 api = Api(oauth)
@@ -20,7 +20,10 @@ class AuthCallback(Resource):
         # TODO: check if not code is sent
         code = request.args["code"]
 
-        user = User.from_code(code, request.base_url)
-        user.save()
+        try:
+            user = User.from_code(code, request.base_url)
+            user.save()
+        except UserException:
+            abort(500, "Couldn't get access token.")
 
         return {"msg": "App installed correctly."}
