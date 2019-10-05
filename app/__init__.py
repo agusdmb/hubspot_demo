@@ -1,13 +1,18 @@
+from typing import Any, Dict
+
 from flask import Flask
+from flask_migrate import Migrate
 
 from app.blueprints import ACTIVE
 from app.models import db
-from flask_migrate import Migrate
 
 
-def create_app() -> Flask:
+def create_app(config: Dict[str, Any] = None) -> Flask:
     app = Flask(__name__)
+
     app.config.from_object("app.config")
+    if config:
+        app.config.update(config)
 
     for url, blueprint in ACTIVE:
         app.register_blueprint(blueprint, url_prefix=url)
