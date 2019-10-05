@@ -2,6 +2,9 @@
 
 ## How to run
 
+To run first must set 2 environment variables `CLIENT_ID` and `CLIENT_SECRET`
+then:
+
 ```bash
 python runner.py
 ```
