@@ -24,7 +24,7 @@ pip install -r dev-requirements.txt
 
 ## TODO
 
-- More tests cases
+- More test cases
 - Add pre-commit and hooks to flake8, black and mypy
 - Docstrings
 - A root swagger

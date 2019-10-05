@@ -79,7 +79,6 @@ class User:
         return None
 
     def refresh_token(self) -> None:
-        # TODO: check what error throws HubSpot if the token has expired.
         data = {
             "grant_type": "refresh_token",
             "client_id": app.config["CLIENT_ID"],
