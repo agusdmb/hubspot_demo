@@ -94,6 +94,7 @@ class User:
     def save(self) -> None:
         user = UserModel.query.get(self.data["user_id"])
         if user:
+            user.refresh_token = self.data["refresh_token"]
             user.access_token = self.data["access_token"]
         else:
             user = UserModel(
